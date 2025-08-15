@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Typing Speed Test</title>
+    <link rel="stylesheet" href="app.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>⚡ Typing Speed Test</h1>
+
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+
+      <div class="stats-container">
+        <div class="stat-card">
+          <div class="stat-label">WPM</div>
+          <div class="stat-value" id="wpm">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Accuracy</div>
+          <div class="stat-value" id="accuracy">0%</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Time</div>
+          <div class="stat-value" id="timer">60s</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Characters</div>
+          <div class="stat-value" id="characters">0/0</div>
+        </div>
+      </div>
+
+      <div class="text-display" id="textDisplay"></div>
+
+      <textarea
+        class="input-area"
+        id="inputArea"
+        placeholder="Click 'Start Test' and begin typing the text above..."
+        ,
+        disabled
+      ></textarea>
+
+      <div class="controls">
+        <button class="btn btn-primary" id="startBtn">Start Test</button>
+        <button class="btn btn-secondary" id="resetBtn">Reset</button>
+      </div>
+
+      <div class="completion-message" id="completionMessage">
+        <h3>🎉 Test Complete!</h3>
+        <p id="finalStats"></p>
+      </div>
+
+      <div class="best-score" id="bestScore" style="display: none">
+        <div>🏆 Best Score: <span id="bestWPM">0</span> WPM</div>
+      </div>
+    </div>
+    <script src="index.js"></script>
+  </body>
+</html>
