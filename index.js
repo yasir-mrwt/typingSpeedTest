@@ -14,6 +14,11 @@ const timer = document.querySelector("#timer");
 const characters = document.querySelector("#characters");
 const accuracy = document.querySelector("#accuracy");
 const wpm = document.querySelector("#wpm");
+const progressFill = document.querySelector("#progressFill");
+const completionMessage = document.querySelector(".completion-message");
+const finalStats = document.querySelector("#finalStats");
+const bestScore = document.querySelector("#bestScore");
+const bestWPMResult = document.querySelector("#bestWPM");
 
 //timer function
 let totalTime = 60;
@@ -31,6 +36,12 @@ function timeFunction() {
       clearInterval(timeInterval);
       timer.textContent = `00s`;
       inputArea.disabled = true;
+      completionMessage.style.display = "block";
+      finalStats.innerHTML = `Your Speed: <b>${wpmCalculator} wpm</b><br>
+       Accuracy: <b>${accuracyPercentage}%</b><br>
+       Characters Typed: <b>${inputValue.length}/${paraLength}</b>`;
+      startBtn.textContent = "times up !!!";
+      wpmScores(wpmCalculator);
     }
   }, 1000);
 }
@@ -79,38 +90,92 @@ inputArea.onpaste = (e) => {
 //input area logic
 let inputValue;
 let accuracyPercentage;
+let progressBarScore;
+let bestWPM = JSON.parse(localStorage.getItem("wpm")) || [];
+
 inputArea.addEventListener("input", (e) => {
-  findWPM();
+  // 1. First read all needed values
   inputValue = e.target.value;
+  const newLength = inputValue.length;
   chars = document.querySelectorAll(".char");
-  chars.forEach((element) => {
-    element.className = "char";
-  });
-  if (inputValue.length === 0) {
-    correctWords = 0;
-    characters.textContent = `0/${paraLength}`;
-    chars[0]?.classList.add("current");
+
+  // 2. Perform calculations
+  findWPM();
+  progressBarScore = Math.min((newLength / randomPara.length) * 100, 100);
+
+  // Reset counters
+  correctWords = 0;
+
+  // 3. Check for empty input
+  if (newLength === 0) {
+    requestAnimationFrame(() => {
+      characters.textContent = `0/${paraLength}`;
+      chars.forEach((element) => {
+        element.className = "char";
+      });
+      chars[0]?.classList.add("current");
+    });
     return;
   }
-  correctWords = 0;
-  for (let i = 0; i < chars.length; i++) {
-    if (i < inputValue.length) {
-      if (inputValue[i] === randomPara[i]) {
-        chars[i].classList.add("correct");
-        correctWords++;
-      } else {
-        chars[i].classList.add("incorrect");
-      }
-    } else if (i === inputValue.length) {
-      chars[i].classList.add("current");
-      break;
+
+  // 4. Count correct words (read phase)
+  for (let i = 0; i < newLength; i++) {
+    if (inputValue[i] === randomPara[i]) {
+      correctWords++;
     }
-    //accuracy calculation
-    characters.textContent = `${correctWords}/${paraLength}`;
-    accuracyPercentage = Math.floor((correctWords / paraLength) * 100);
-    accuracy.textContent = `${accuracyPercentage}%`;
   }
+
+  // 5. Calculate accuracy
+  accuracyPercentage = Math.floor((correctWords / paraLength) * 100);
+
+  // 6. Batch all DOM writes together
+  requestAnimationFrame(() => {
+    // Update progress bar
+    progressFill.style.width = `${progressBarScore}%`;
+
+    // Update character highlighting
+    chars.forEach((char, i) => {
+      let newClass = "char";
+      if (i < newLength) {
+        newClass += inputValue[i] === randomPara[i] ? " correct" : " incorrect";
+      } else if (i === newLength) {
+        newClass += " current";
+      }
+      char.className = newClass;
+    });
+
+    // Update stats
+    characters.textContent = `${newLength}/${paraLength}`;
+    accuracy.textContent = `${accuracyPercentage}%`;
+
+    // Check for completion
+    if (newLength === paraLength) {
+      clearInterval(timeInterval);
+      inputArea.disabled = true;
+      completionMessage.style.display = "block";
+      startBtn.textContent = "times up";
+      finalStats.innerHTML = `Your Speed: <b>${wpmCalculator} wpm</b><br>
+       Accuracy: <b>${accuracyPercentage}%</b><br>
+       Characters Typed: <b>${newLength}/${paraLength}</b>`;
+      wpmScores(wpmCalculator);
+      if (bestScore === null) {
+        return;
+      } else {
+        bestScore.style.display = "block";
+        bestWPMResult.textContent = bestWPM[0];
+      }
+    }
+  });
 });
+//storing score in local storage
+function wpmScores(newScore) {
+  const isDubplicated = bestWPM.includes(newScore);
+  if (!isDubplicated) {
+    bestWPM.push(newScore);
+  }
+  bestWPM.sort((a, b) => b - a);
+  localStorage.setItem("wpm", JSON.stringify(bestWPM));
+}
 
 //start btn logic
 startBtn.addEventListener("click", initTypingTest);
@@ -131,6 +196,8 @@ function resetAll() {
   totalCharTyped = 0;
   wpmCalculator = 0;
   findWPM();
+  progressFill.style.width = `0%`;
+  completionMessage.style.display = "none";
 
   if (hadContent > 0) {
     inputArea.disabled = true;
@@ -156,9 +223,14 @@ function findWPM() {
   totalCharTyped = inputArea.value.length;
   let wordsTyped = totalCharTyped / 5;
   wpmCalculator = Math.floor(wordsTyped);
-  wpm.textContent = `${wpmCalculator}`;
+  wpm.textContent = `${wpmCalculator} wpm`;
 }
 
-//progress bar functionality
-//result display
-//storing result in local storage
+//clearing local storage at 12 am each night
+const now = new Date();
+const msToNextHour = (60 - now.getMinutes()) * 60000 - now.getSeconds() * 1000;
+
+setTimeout(() => {
+  clearAtMidnight();
+  setInterval(clearAtMidnight, 3600000);
+}, msToNextHour);
